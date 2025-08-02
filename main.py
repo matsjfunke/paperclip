@@ -1,6 +1,8 @@
 import tempfile
 import os
 from typing import Optional
+from urllib.parse import quote
+
 
 import fitz
 import requests
@@ -78,6 +80,61 @@ def get_arxiv_paper_text(
         "returned_pages": returned_pages, 
         "format": "text"
     }
+
+
+def get_osf_providers() -> list:
+    """Fetch current list of valid OSF preprint providers"""
+    url = "https://api.osf.io/v2/preprint_providers/"
+    response = requests.get(url)
+    response.raise_for_status()
+    data = response.json()
+    
+    # Extract provider IDs from the response
+    providers = [provider['id'] for provider in data['data']]
+    return sorted(providers)
+
+def get_osf_provider_preprints_metadata(provider: str):
+    # Get current valid providers
+    valid_providers = get_osf_providers()
+    
+    # Validate provider
+    if provider not in valid_providers:
+        raise ValueError(f"Invalid provider: {provider}. Allowed providers: {valid_providers}")
+
+    # Build query parameter and encode it
+    param = quote('filter[provider]')
+    url = f"https://api.osf.io/v2/preprints/?{param}={quote(provider)}"
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.json()
+
+@app.tool
+def list_preprint_providers() -> dict:
+    """
+    Get the current list of available preprint providers in the paperclip MCP server.
+    
+    Returns:
+        Dictionary containing the list of valid provider IDs and total count
+    """
+    providers = get_osf_providers()
+    providers += ["arxiv", "biorxiv", "medrxiv", "chemrxiv"]
+    providers.sort(key=str.lower)
+    return {
+        "providers": providers,
+        "total_count": len(providers),
+    }
+
+@app.tool
+def get_osf_provider_preprints_metadata(
+    provider: str,
+) -> dict:
+    """
+    Get metadata for preprints from an OSF provider.
+
+    Args:
+        provider: The provider of the paper. Use list_osf_providers() to see available options.
+    """
+    return get_osf_provider_preprints_metadata(provider)
 
 
 if __name__ == "__main__":

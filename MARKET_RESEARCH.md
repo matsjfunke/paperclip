@@ -29,3 +29,39 @@
 [] [science open](https://www.scienceopen.com/)
 [] [SSRN](https://www.ssrn.com/index.cfm/en/the-lancet/)
 [] [synthical](https://synthical.com/feed/new)
+
+africarxiv
+agrixiv
+arabixiv
+arxiv
+biohackrxiv
+biorxiv
+bodoarxiv
+chemrxiv
+coppreprints
+eartharxiv
+ecoevorxiv
+ecsarxiv
+edarxiv
+engrxi,
+focusarchive
+frenxiv
+inarxiv
+indiarxiv
+lawarchive
+lawarxiv
+lissa
+livedata
+marxiv
+mediarxiv
+medrxiv
+metaarxiv
+mindrxiv
+newaddictionsx
+nutrixiv
+osf
+paleorxiv
+psyarxiv
+socarxiv
+sportrxiv
+thesiscommons
