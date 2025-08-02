@@ -1,17 +1,26 @@
+from typing import Annotated
 from fastmcp import FastMCP
 
 from core import fetch_osf_preprints, get_all_providers
 
-app = FastMCP("paperclip MCP Server")
+mcp = FastMCP(
+    name="Paperclip MCP Server",
+    instructions="""
+        This server provides tools to interact with academic preprint papers.
+        Call list_preprint_providers() to get the complete list of all available preprint providers via the paperclip MCP server.
+        Call search_preprints() to search for preprints using OSF API supported filters.
+    """,
+)
 
 
-@app.tool
-def list_preprint_providers() -> dict:
+@mcp.tool(
+    name="list_preprint_providers",
+    description="Get the complete list of all available preprint providers via the paperclip MCP server.",
+)
+async def list_preprint_providers() -> dict:
     """
-    Get the complete list of all available preprint providers (OSF + external).
+    Call the osf api and hardcode other supported providers.
 
-    Returns:
-        Dictionary containing the list of all provider objects and total count
     """
     providers = get_all_providers()
 
@@ -21,18 +30,20 @@ def list_preprint_providers() -> dict:
     }
 
 
-@app.tool
-def get_preprint(
-    provider: str,
+@mcp.tool(
+    name="search_preprints",
+    description="Search for preprints using supported filters.",
+)
+async def search_preprints(
+    provider: Annotated[str | None, "Provider ID to filter preprints (e.g., psyarxiv, socarxiv, biohackrxiv)"] = None,
+    subjects: Annotated[str | None, "Subject categories to filter by (e.g., psychology, neuroscience)"] = None,
+    date_published_gte: Annotated[str | None, "Filter preprints published on or after this date (e.g., 2024-01-01)"] = None,
 ) -> dict:
-    """
-    Get metadata for preprints from an OSF provider.
-
-    Args:
-        provider: The provider of the paper. Use list_preprint_providers() to see available OSF providers.
-    """
-    return fetch_osf_preprints(provider)
-
+    return fetch_osf_preprints(
+        provider_id=provider,
+        subjects=subjects,
+        date_published_gte=date_published_gte,
+    )
 
 if __name__ == "__main__":
-    app.run(transport="http", host="0.0.0.0", port=8000)
+    mcp.run(transport="http", host="0.0.0.0", port=8000)
