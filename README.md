@@ -1,4 +1,4 @@
-# Papercilp MCP Server
+# Paperclip MCP Server
 
 An Model Context Protocol (MCP) Server for searching & retrieving research papers.
 
