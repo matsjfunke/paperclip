@@ -46,3 +46,11 @@ watchmedo auto-restart --patterns="*.py" --recursive -- python main.py
 ```
 
 The server will automatically restart when you make changes to any `.py` files.
+
+### Testing
+
+Use the [MCP Inspector](https://inspector.modelcontextprotocol.io/) to interact with the server.
+
+```bash
+pnpx @modelcontextprotocol/inspector
+```
