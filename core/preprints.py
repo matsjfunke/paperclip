@@ -1,120 +1,10 @@
-import re
 from typing import Any, Dict, Optional
 from urllib.parse import quote, urlencode
-import os
-import tempfile
 
 import requests
-import fitz  # PyMuPDF
-import pymupdf4llm as pdfmd
 
 from .providers import fetch_osf_providers, validate_provider
-
-
-def clean_api_text(text: str, max_length: int = 200) -> str:
-    """
-    Args:
-        text: The text to clean
-        max_length: Maximum allowed length (default 200)
-        
-    Returns:
-        Cleaned text suitable for API queries
-    """
-    if not text:
-        return text
-    
-    # Remove or replace problematic characters
-    cleaned = text
-    
-    # Replace various quote types with simple quotes or remove them
-    cleaned = cleaned.replace('"', '"').replace('"', '"').replace(''', "'").replace(''', "'")
-    
-    # Remove or replace other problematic special characters
-    cleaned = cleaned.replace('&nbsp;', ' ')  # Non-breaking space
-    cleaned = cleaned.replace('\u00a0', ' ')  # Unicode non-breaking space
-    cleaned = cleaned.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')  # Line breaks and tabs
-    
-    # Replace multiple spaces with single space
-    cleaned = re.sub(r'\s+', ' ', cleaned)
-    
-    # Remove leading/trailing whitespace
-    cleaned = cleaned.strip()
-    
-    # Handle length limits
-    if len(cleaned) > max_length:
-        cleaned = cleaned[:max_length-3] + "..."
-    
-    # Remove or replace characters that commonly cause URL encoding issues
-    problematic_chars = ['<', '>', '{', '}', '|', '\\', '^', '`', '[', ']']
-    for char in problematic_chars:
-        cleaned = cleaned.replace(char, '')
-    
-    # Replace colons which seem to cause OSF API issues
-    cleaned = cleaned.replace(':', ' -')
-    
-    # Replace other potentially problematic punctuation
-    cleaned = cleaned.replace(';', ',')  # Semicolons to commas
-    cleaned = cleaned.replace('?', '')   # Remove question marks
-    cleaned = cleaned.replace('!', '')   # Remove exclamation marks
-    cleaned = cleaned.replace('#', '')   # Remove hashtags
-    cleaned = cleaned.replace('%', '')   # Remove percent signs
-    
-    # Clean up any double spaces created by replacements
-    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
-    
-    return cleaned
-
-
-async def extract_pdf_to_markdown(file_input, filename: Optional[str] = None, write_images: bool = False) -> str:
-    temp_path = None
-    
-    try:
-        # Handle different input types
-        if isinstance(file_input, str) and os.path.exists(file_input):
-            # Direct file path
-            md = pdfmd.to_markdown(file_input, write_images=write_images)
-            return md
-        
-        elif isinstance(file_input, bytes):
-            # File bytes - write to temp file
-            temp_filename = filename or "temp_pdf.pdf"
-            temp_path = f"/tmp/{temp_filename}"
-            with open(temp_path, "wb") as f:
-                f.write(file_input)
-            md = pdfmd.to_markdown(temp_path, write_images=write_images)
-            return md
-        
-        elif hasattr(file_input, 'read'):
-            # File object (like FastAPI UploadFile)
-            temp_filename = filename or getattr(file_input, 'filename', 'temp_pdf.pdf')
-            temp_path = f"/tmp/{temp_filename}"
-            
-            # Handle both sync and async file objects
-            if hasattr(file_input, '__aiter__') or hasattr(file_input.read, '__call__'):
-                try:
-                    # Try async read first
-                    content = await file_input.read()
-                except TypeError:
-                    # Fall back to sync read
-                    content = file_input.read()
-            else:
-                content = file_input.read()
-            
-            with open(temp_path, "wb") as f:
-                f.write(content)
-            md = pdfmd.to_markdown(temp_path, write_images=write_images)
-            return md
-        
-        else:
-            raise ValueError(f"Unsupported file_input type: {type(file_input)}")
-    
-    finally:
-        # Clean up temporary file
-        if temp_path and os.path.exists(temp_path):
-            try:
-                os.unlink(temp_path)
-            except Exception:
-                pass  # Ignore cleanup errors
+from utils import sanitize_api_queries, extract_pdf_to_markdown
 
 
 def fetch_osf_preprints(
@@ -146,9 +36,9 @@ def fetch_osf_preprints(
     filters = {}
     
     if provider_id:
-        filters["filter[provider]"] = clean_api_text(provider_id, max_length=50)
+        filters["filter[provider]"] = sanitize_api_queries(provider_id, max_length=50)
     if subjects:
-        filters["filter[subjects]"] = clean_api_text(subjects, max_length=100)
+        filters["filter[subjects]"] = sanitize_api_queries(subjects, max_length=100)
     if date_published_gte:
         filters["filter[date_published][gte]"] = date_published_gte  # Dates don't need cleaning
 
@@ -169,7 +59,7 @@ def fetch_osf_preprints(
             if len(filters) > 1:
                 simple_filters = {}
                 if provider_id:
-                    simple_filters["filter[provider]"] = clean_api_text(provider_id, max_length=50)
+                    simple_filters["filter[provider]"] = sanitize_api_queries(provider_id, max_length=50)
                 
                 simple_query = urlencode(simple_filters, safe='', quote_via=quote)
                 simple_url = f"{base_url}?{simple_query}"
@@ -257,18 +147,17 @@ async def download_osf_preprint_and_parse_to_markdown(preprint_id):
         # Extract metadata for error handling
         metadata = preprint_data
         
-        # Download the PDF to a temporary file
+        # Download the PDF and parse to markdown
         pdf_response = requests.get(preprint_data['download_url'], timeout=60)
         pdf_response.raise_for_status()
         
-        # Create temporary file
-        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
-            temp_file.write(pdf_response.content)
-            temp_file_path = temp_file.name
-        
         # Parse PDF to markdown using pymupdf4llm
         try:
-            markdown_content = await extract_pdf_to_markdown(temp_file_path, write_images=False)
+            markdown_content = await extract_pdf_to_markdown(
+                pdf_response.content,
+                filename=f"{preprint_id}.pdf",
+                write_images=False
+            )
             
         except Exception as pdf_error:
             return {
@@ -312,10 +201,3 @@ async def download_osf_preprint_and_parse_to_markdown(preprint_id):
             "message": f"Error processing preprint: {str(e)}",
             "metadata": metadata if 'metadata' in locals() else {}
         }
-    finally:
-        # Clean up temporary file
-        if temp_file and os.path.exists(temp_file_path):
-            try:
-                os.unlink(temp_file_path)
-            except:
-                pass  # Ignore cleanup errors
