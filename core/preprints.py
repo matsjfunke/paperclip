@@ -2,8 +2,10 @@ import re
 from typing import Any, Dict, Optional
 from urllib.parse import quote, urlencode
 import os
+import tempfile
 
 import requests
+import fitz  # PyMuPDF
 
 from .providers import fetch_osf_providers, validate_provider
 
@@ -145,18 +147,39 @@ def fetch_osf_preprints(
         raise ValueError(f"Request failed: {str(e)}")
 
 
-def download_preprint_pdf(preprint_id):
-    """Download a specific preprint PDF by ID"""
+def get_osf_preprint_contents(preprint_id):
+    """
+    Download a specific preprint PDF by ID and parse it to markdown.
+    Returns paper metadata along with markdown content.
+    """
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
     
+    temp_file = None
     try:
         # Get preprint metadata
         preprint_url = f'https://api.osf.io/v2/preprints/{preprint_id}'
         response = requests.get(preprint_url, headers=headers, timeout=30)
         response.raise_for_status()
         preprint_data = response.json()
+        
+        # Extract metadata
+        attributes = preprint_data['data']['attributes']
+        metadata = {
+            "id": preprint_id,
+            "title": attributes.get('title', ''),
+            "description": attributes.get('description', ''),
+            "date_created": attributes.get('date_created', ''),
+            "date_published": attributes.get('date_published', ''),
+            "date_modified": attributes.get('date_modified', ''),
+            "is_published": attributes.get('is_published', False),
+            "is_preprint_orphan": attributes.get('is_preprint_orphan', False),
+            "license_record": attributes.get('license_record', {}),
+            "doi": attributes.get('doi', ''),
+            "tags": attributes.get('tags', []),
+            "subjects": attributes.get('subjects', [])
+        }
         
         # Get the primary file URL
         primary_file_url = preprint_data['data']['relationships']['primary_file']['links']['related']['href']
@@ -169,48 +192,113 @@ def download_preprint_pdf(preprint_id):
         # Get the download URL
         download_url = file_data['data']['links']['download']
         
-        if download_url:
-            # Download the PDF
-            pdf_response = requests.get(download_url, headers=headers, timeout=60)
-            pdf_response.raise_for_status()
-            
-            # Create a safe filename
-            title = preprint_data['data']['attributes']['title']
-            # Clean the title for filename use
-            safe_title = re.sub(r'[<>:"/\\|?*]', '_', title)
-            safe_title = safe_title[:50]  # Truncate
-            filename = f"{safe_title}.pdf"
-            
-            # Save the file
-            with open(filename, 'wb') as f:
-                f.write(pdf_response.content)
-            
-            file_size = len(pdf_response.content)
-            return {
-                "status": "success",
-                "filename": filename,
-                "title": title,
-                "file_size": file_size,
-                "message": f"Downloaded: {filename} ({file_size} bytes)"
-            }
-        else:
+        if not download_url:
             return {
                 "status": "error",
-                "message": "Download URL not available"
+                "message": "Download URL not available",
+                "metadata": metadata
             }
+            
+        # Download the PDF to a temporary file
+        pdf_response = requests.get(download_url, headers=headers, timeout=60)
+        pdf_response.raise_for_status()
+        
+        # Create temporary file
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
+            temp_file.write(pdf_response.content)
+            temp_file_path = temp_file.name
+        
+        # Parse PDF to markdown using PyMuPDF
+        try:
+            doc = fitz.open(temp_file_path)
+            markdown_content = ""
+            
+            for page_num in range(len(doc)):
+                page = doc[page_num]
+                
+                # Extract text blocks with formatting
+                blocks = page.get_text("dict")
+                
+                # Add page header
+                if page_num > 0:
+                    markdown_content += f"\n\n---\n\n# Page {page_num + 1}\n\n"
+                
+                # Process text blocks
+                for block in blocks["blocks"]:
+                    if "lines" in block:
+                        for line in block["lines"]:
+                            line_text = ""
+                            for span in line["spans"]:
+                                text = span["text"].strip()
+                                if text:
+                                    # Check for bold/italic formatting based on font
+                                    font = span.get("font", "").lower()
+                                    flags = span.get("flags", 0)
+                                    
+                                    # Bold text (common indicators)
+                                    if (flags & 2**4) or "bold" in font:
+                                        text = f"**{text}**"
+                                    # Italic text
+                                    elif (flags & 2**1) or "italic" in font:
+                                        text = f"*{text}*"
+                                    
+                                    line_text += text + " "
+                            
+                            if line_text.strip():
+                                # Detect headers based on font size or formatting
+                                avg_size = sum(span.get("size", 12) for span in line["spans"]) / len(line["spans"])
+                                if avg_size > 16:
+                                    markdown_content += f"\n## {line_text.strip()}\n\n"
+                                elif avg_size > 14:
+                                    markdown_content += f"\n### {line_text.strip()}\n\n"
+                                else:
+                                    markdown_content += f"{line_text.strip()}\n\n"
+            
+            doc.close()
+            
+            # Clean up markdown formatting
+            markdown_content = re.sub(r'\n{3,}', '\n\n', markdown_content)  # Remove excessive newlines
+            markdown_content = markdown_content.strip()
+            
+        except Exception as pdf_error:
+            return {
+                "status": "error",
+                "message": f"Error parsing PDF: {str(pdf_error)}",
+                "metadata": metadata
+            }
+        
+        file_size = len(pdf_response.content)
+        
+        return {
+            "status": "success",
+            "metadata": metadata,
+            "content": markdown_content,
+            "file_size": file_size,
+            "message": f"Successfully parsed PDF content ({file_size} bytes)"
+        }
             
     except requests.exceptions.RequestException as e:
         return {
             "status": "error", 
-            "message": f"Network error: {str(e)}"
+            "message": f"Network error: {str(e)}",
+            "metadata": metadata if 'metadata' in locals() else {}
         }
     except KeyError as e:
         return {
             "status": "error",
-            "message": f"Unexpected API response structure: {str(e)}"
+            "message": f"Unexpected API response structure: {str(e)}",
+            "metadata": metadata if 'metadata' in locals() else {}
         }
     except Exception as e:
         return {
             "status": "error",
-            "message": f"Error downloading PDF: {str(e)}"
+            "message": f"Error processing preprint: {str(e)}",
+            "metadata": metadata if 'metadata' in locals() else {}
         }
+    finally:
+        # Clean up temporary file
+        if temp_file and os.path.exists(temp_file_path):
+            try:
+                os.unlink(temp_file_path)
+            except:
+                pass  # Ignore cleanup errors
