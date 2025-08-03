@@ -12,8 +12,6 @@ from .providers import fetch_osf_providers, validate_provider
 
 def clean_api_text(text: str, max_length: int = 200) -> str:
     """
-    Clean text input for API compatibility by removing/replacing problematic characters.
-    
     Args:
         text: The text to clean
         max_length: Maximum allowed length (default 200)
@@ -72,8 +70,6 @@ def fetch_osf_preprints(
     date_published_gte: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Fetch preprints metadata from OSF with supported filtering options.
-    
     NOTE: The OSF API only supports a limited set of filters. Many common filters
     like title, DOI, creator, etc. are NOT supported by the OSF API.
     
@@ -117,9 +113,7 @@ def fetch_osf_preprints(
         return response.json()
     except requests.exceptions.HTTPError as e:
         if response.status_code == 400:
-            # Try a simpler search if the complex one fails
             if len(filters) > 1:
-                # Retry with just the provider filter to see if that works
                 simple_filters = {}
                 if provider_id:
                     simple_filters["filter[provider]"] = clean_api_text(provider_id, max_length=50)
@@ -147,24 +141,22 @@ def fetch_osf_preprints(
         raise ValueError(f"Request failed: {str(e)}")
 
 
-def get_osf_preprint_contents(preprint_id):
-    """
-    Download a specific preprint PDF by ID and parse it to markdown.
-    Returns paper metadata along with markdown content.
-    """
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-    
-    temp_file = None
+def fetch_single_osf_preprint_metadata(preprint_id: str) -> Dict[str, Any]:
     try:
-        # Get preprint metadata
         preprint_url = f'https://api.osf.io/v2/preprints/{preprint_id}'
-        response = requests.get(preprint_url, headers=headers, timeout=30)
+        response = requests.get(preprint_url, timeout=30)
         response.raise_for_status()
-        preprint_data = response.json()
+        preprint_data= response.json()
+
+        primary_file_url = preprint_data['data']['relationships']['primary_file']['links']['related']['href']
+        file_response = requests.get(primary_file_url, timeout=30)
+        file_response.raise_for_status()
+        file_data = file_response.json()
         
-        # Extract metadata
+        # Get the download URL
+        download_url = file_data['data']['links']['download']
+        
+        # Prepare metadata first
         attributes = preprint_data['data']['attributes']
         metadata = {
             "id": preprint_id,
@@ -178,19 +170,9 @@ def get_osf_preprint_contents(preprint_id):
             "license_record": attributes.get('license_record', {}),
             "doi": attributes.get('doi', ''),
             "tags": attributes.get('tags', []),
-            "subjects": attributes.get('subjects', [])
+            "subjects": attributes.get('subjects', []),
+            "download_url": download_url
         }
-        
-        # Get the primary file URL
-        primary_file_url = preprint_data['data']['relationships']['primary_file']['links']['related']['href']
-        
-        # Get file metadata to find download URL
-        file_response = requests.get(primary_file_url, headers=headers, timeout=30)
-        file_response.raise_for_status()
-        file_data = file_response.json()
-        
-        # Get the download URL
-        download_url = file_data['data']['links']['download']
         
         if not download_url:
             return {
@@ -198,9 +180,32 @@ def get_osf_preprint_contents(preprint_id):
                 "message": "Download URL not available",
                 "metadata": metadata
             }
-            
+        
+        return metadata
+    except requests.exceptions.RequestException as e:
+        raise ValueError(f"Failed to fetch preprint metadata: {str(e)}")
+
+
+def download_osf_preprint_and_parse_to_markdown(preprint_id):
+    """
+    Download a specific preprint PDF by ID and parse it to markdown.
+    Returns paper metadata along with markdown content.
+    """
+    temp_file = None
+    metadata = {}  # Initialize metadata to avoid undefined variable errors
+    try:
+        # Get preprint metadata using helper function
+        preprint_data = fetch_single_osf_preprint_metadata(preprint_id)
+        
+        # If fetch_single_osf_preprint_metadata returns an error dict, handle it
+        if isinstance(preprint_data, dict) and preprint_data.get('status') == 'error':
+            return preprint_data
+        
+        # Extract metadata for error handling
+        metadata = preprint_data
+        
         # Download the PDF to a temporary file
-        pdf_response = requests.get(download_url, headers=headers, timeout=60)
+        pdf_response = requests.get(preprint_data['download_url'], timeout=60)
         pdf_response.raise_for_status()
         
         # Create temporary file
@@ -277,6 +282,13 @@ def get_osf_preprint_contents(preprint_id):
             "message": f"Successfully parsed PDF content ({file_size} bytes)"
         }
             
+    except ValueError as e:
+        # Error from fetch_single_osf_preprint helper function
+        return {
+            "status": "error", 
+            "message": str(e),
+            "metadata": {}
+        }
     except requests.exceptions.RequestException as e:
         return {
             "status": "error", 

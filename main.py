@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastmcp import FastMCP
 
-from core import fetch_osf_preprints, get_all_providers, get_osf_preprint_contents
+from core import fetch_osf_preprints, get_all_providers, fetch_single_osf_preprint_metadata, download_osf_preprint_and_parse_to_markdown
 
 mcp = FastMCP(
     name="Paperclip MCP Server",
@@ -50,7 +50,14 @@ async def search_preprints(
     description="Retrieve the content of a preprint paper by its ID (which can be found by the search_preprints tool).",
 )
 async def get_paper_content(preprint_id: str) -> dict:
-    return get_osf_preprint_contents(preprint_id)
+    return download_osf_preprint_and_parse_to_markdown(preprint_id)
+
+@mcp.tool(
+    name="get_paper_metadata",
+    description="Retrieve the metadata of a preprint paper by its ID (which can be found by the search_preprints tool).",
+)
+async def get_paper_metadata(preprint_id: str) -> dict:
+    return fetch_single_osf_preprint_metadata(preprint_id)
 
 if __name__ == "__main__":
     mcp.run(transport="http", host="0.0.0.0", port=8000)
