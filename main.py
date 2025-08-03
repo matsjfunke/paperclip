@@ -50,7 +50,7 @@ async def search_preprints(
     description="Retrieve the content of a preprint paper by its ID (which can be found by the search_preprints tool).",
 )
 async def get_paper_content(preprint_id: str) -> dict:
-    return download_osf_preprint_and_parse_to_markdown(preprint_id)
+    return await download_osf_preprint_and_parse_to_markdown(preprint_id)
 
 @mcp.tool(
     name="get_paper_metadata",

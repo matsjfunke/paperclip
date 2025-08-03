@@ -6,6 +6,7 @@ import tempfile
 
 import requests
 import fitz  # PyMuPDF
+import pymupdf4llm as pdfmd
 
 from .providers import fetch_osf_providers, validate_provider
 
@@ -62,6 +63,58 @@ def clean_api_text(text: str, max_length: int = 200) -> str:
     cleaned = re.sub(r'\s+', ' ', cleaned).strip()
     
     return cleaned
+
+
+async def extract_pdf_to_markdown(file_input, filename: Optional[str] = None, write_images: bool = False) -> str:
+    temp_path = None
+    
+    try:
+        # Handle different input types
+        if isinstance(file_input, str) and os.path.exists(file_input):
+            # Direct file path
+            md = pdfmd.to_markdown(file_input, write_images=write_images)
+            return md
+        
+        elif isinstance(file_input, bytes):
+            # File bytes - write to temp file
+            temp_filename = filename or "temp_pdf.pdf"
+            temp_path = f"/tmp/{temp_filename}"
+            with open(temp_path, "wb") as f:
+                f.write(file_input)
+            md = pdfmd.to_markdown(temp_path, write_images=write_images)
+            return md
+        
+        elif hasattr(file_input, 'read'):
+            # File object (like FastAPI UploadFile)
+            temp_filename = filename or getattr(file_input, 'filename', 'temp_pdf.pdf')
+            temp_path = f"/tmp/{temp_filename}"
+            
+            # Handle both sync and async file objects
+            if hasattr(file_input, '__aiter__') or hasattr(file_input.read, '__call__'):
+                try:
+                    # Try async read first
+                    content = await file_input.read()
+                except TypeError:
+                    # Fall back to sync read
+                    content = file_input.read()
+            else:
+                content = file_input.read()
+            
+            with open(temp_path, "wb") as f:
+                f.write(content)
+            md = pdfmd.to_markdown(temp_path, write_images=write_images)
+            return md
+        
+        else:
+            raise ValueError(f"Unsupported file_input type: {type(file_input)}")
+    
+    finally:
+        # Clean up temporary file
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.unlink(temp_path)
+            except Exception:
+                pass  # Ignore cleanup errors
 
 
 def fetch_osf_preprints(
@@ -186,7 +239,7 @@ def fetch_single_osf_preprint_metadata(preprint_id: str) -> Dict[str, Any]:
         raise ValueError(f"Failed to fetch preprint metadata: {str(e)}")
 
 
-def download_osf_preprint_and_parse_to_markdown(preprint_id):
+async def download_osf_preprint_and_parse_to_markdown(preprint_id):
     """
     Download a specific preprint PDF by ID and parse it to markdown.
     Returns paper metadata along with markdown content.
@@ -213,57 +266,9 @@ def download_osf_preprint_and_parse_to_markdown(preprint_id):
             temp_file.write(pdf_response.content)
             temp_file_path = temp_file.name
         
-        # Parse PDF to markdown using PyMuPDF
+        # Parse PDF to markdown using pymupdf4llm
         try:
-            doc = fitz.open(temp_file_path)
-            markdown_content = ""
-            
-            for page_num in range(len(doc)):
-                page = doc[page_num]
-                
-                # Extract text blocks with formatting
-                blocks = page.get_text("dict")
-                
-                # Add page header
-                if page_num > 0:
-                    markdown_content += f"\n\n---\n\n# Page {page_num + 1}\n\n"
-                
-                # Process text blocks
-                for block in blocks["blocks"]:
-                    if "lines" in block:
-                        for line in block["lines"]:
-                            line_text = ""
-                            for span in line["spans"]:
-                                text = span["text"].strip()
-                                if text:
-                                    # Check for bold/italic formatting based on font
-                                    font = span.get("font", "").lower()
-                                    flags = span.get("flags", 0)
-                                    
-                                    # Bold text (common indicators)
-                                    if (flags & 2**4) or "bold" in font:
-                                        text = f"**{text}**"
-                                    # Italic text
-                                    elif (flags & 2**1) or "italic" in font:
-                                        text = f"*{text}*"
-                                    
-                                    line_text += text + " "
-                            
-                            if line_text.strip():
-                                # Detect headers based on font size or formatting
-                                avg_size = sum(span.get("size", 12) for span in line["spans"]) / len(line["spans"])
-                                if avg_size > 16:
-                                    markdown_content += f"\n## {line_text.strip()}\n\n"
-                                elif avg_size > 14:
-                                    markdown_content += f"\n### {line_text.strip()}\n\n"
-                                else:
-                                    markdown_content += f"{line_text.strip()}\n\n"
-            
-            doc.close()
-            
-            # Clean up markdown formatting
-            markdown_content = re.sub(r'\n{3,}', '\n\n', markdown_content)  # Remove excessive newlines
-            markdown_content = markdown_content.strip()
+            markdown_content = await extract_pdf_to_markdown(temp_file_path, write_images=False)
             
         except Exception as pdf_error:
             return {
