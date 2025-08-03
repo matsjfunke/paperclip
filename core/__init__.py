@@ -10,7 +10,8 @@ from .providers import (
 )
 
 from .preprints import (
-    fetch_osf_preprints
+    fetch_osf_preprints,
+    download_preprint_pdf
 )
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "get_external_providers",
     "get_all_providers", 
     "validate_provider",
-    "fetch_osf_preprints"
+    "fetch_osf_preprints",
+    "download_preprint_pdf"
 ]

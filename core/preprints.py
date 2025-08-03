@@ -1,6 +1,7 @@
 import re
 from typing import Any, Dict, Optional
 from urllib.parse import quote, urlencode
+import os
 
 import requests
 
@@ -142,3 +143,74 @@ def fetch_osf_preprints(
             raise e
     except requests.exceptions.RequestException as e:
         raise ValueError(f"Request failed: {str(e)}")
+
+
+def download_preprint_pdf(preprint_id):
+    """Download a specific preprint PDF by ID"""
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    
+    try:
+        # Get preprint metadata
+        preprint_url = f'https://api.osf.io/v2/preprints/{preprint_id}'
+        response = requests.get(preprint_url, headers=headers, timeout=30)
+        response.raise_for_status()
+        preprint_data = response.json()
+        
+        # Get the primary file URL
+        primary_file_url = preprint_data['data']['relationships']['primary_file']['links']['related']['href']
+        
+        # Get file metadata to find download URL
+        file_response = requests.get(primary_file_url, headers=headers, timeout=30)
+        file_response.raise_for_status()
+        file_data = file_response.json()
+        
+        # Get the download URL
+        download_url = file_data['data']['links']['download']
+        
+        if download_url:
+            # Download the PDF
+            pdf_response = requests.get(download_url, headers=headers, timeout=60)
+            pdf_response.raise_for_status()
+            
+            # Create a safe filename
+            title = preprint_data['data']['attributes']['title']
+            # Clean the title for filename use
+            safe_title = re.sub(r'[<>:"/\\|?*]', '_', title)
+            safe_title = safe_title[:50]  # Truncate
+            filename = f"{safe_title}.pdf"
+            
+            # Save the file
+            with open(filename, 'wb') as f:
+                f.write(pdf_response.content)
+            
+            file_size = len(pdf_response.content)
+            return {
+                "status": "success",
+                "filename": filename,
+                "title": title,
+                "file_size": file_size,
+                "message": f"Downloaded: {filename} ({file_size} bytes)"
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Download URL not available"
+            }
+            
+    except requests.exceptions.RequestException as e:
+        return {
+            "status": "error", 
+            "message": f"Network error: {str(e)}"
+        }
+    except KeyError as e:
+        return {
+            "status": "error",
+            "message": f"Unexpected API response structure: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error downloading PDF: {str(e)}"
+        }

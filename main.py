@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastmcp import FastMCP
 
-from core import fetch_osf_preprints, get_all_providers
+from core import fetch_osf_preprints, get_all_providers, download_preprint_pdf
 
 mcp = FastMCP(
     name="Paperclip MCP Server",
@@ -44,6 +44,13 @@ async def search_preprints(
         subjects=subjects,
         date_published_gte=date_published_gte,
     )
+
+@mcp.tool(
+    name="download_preprint_pdf",
+    description="Download a specific preprint PDF by ID",
+)
+async def download_preprint_paper_pdf(preprint_id: str) -> dict:
+    return download_preprint_pdf(preprint_id)
 
 if __name__ == "__main__":
     mcp.run(transport="http", host="0.0.0.0", port=8000)
