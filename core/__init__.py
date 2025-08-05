@@ -9,10 +9,16 @@ from .providers import (
     validate_provider
 )
 
-from .preprints import (
+from .osf import (
     fetch_osf_preprints,
     fetch_single_osf_preprint_metadata,
     download_osf_preprint_and_parse_to_markdown
+)
+
+from .arxiv import (
+    fetch_arxiv_papers,
+    fetch_single_arxiv_paper_metadata,
+    download_arxiv_paper_and_parse_to_markdown
 )
 
 __all__ = [
@@ -22,5 +28,8 @@ __all__ = [
     "validate_provider",
     "fetch_osf_preprints",
     "fetch_single_osf_preprint_metadata",
-    "download_osf_preprint_and_parse_to_markdown"
+    "download_osf_preprint_and_parse_to_markdown",
+    "fetch_arxiv_papers",
+    "fetch_single_arxiv_paper_metadata",
+    "download_arxiv_paper_and_parse_to_markdown"
 ]

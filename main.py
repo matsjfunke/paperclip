@@ -38,11 +38,13 @@ async def search_preprints(
     provider: Annotated[str | None, "Provider ID to filter preprints (e.g., psyarxiv, socarxiv, biohackrxiv)"] = None,
     subjects: Annotated[str | None, "Subject categories to filter by (e.g., psychology, neuroscience)"] = None,
     date_published_gte: Annotated[str | None, "Filter preprints published on or after this date (e.g., 2024-01-01)"] = None,
+    query: Annotated[str | None, "Text search query for title, author, content"] = None,
 ) -> dict:
     return fetch_osf_preprints(
         provider_id=provider,
         subjects=subjects,
         date_published_gte=date_published_gte,
+        query=query,
     )
 
 @mcp.tool(
