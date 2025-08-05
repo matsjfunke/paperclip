@@ -1,7 +1,17 @@
 from typing import Annotated
+
 from fastmcp import FastMCP
 
-from core import fetch_osf_preprints, get_all_providers, fetch_single_osf_preprint_metadata, download_osf_preprint_and_parse_to_markdown, fetch_osf_providers, fetch_arxiv_papers, fetch_single_arxiv_paper_metadata, download_arxiv_paper_and_parse_to_markdown
+from core import (
+    download_arxiv_paper_and_parse_to_markdown,
+    download_osf_preprint_and_parse_to_markdown,
+    fetch_arxiv_papers,
+    fetch_osf_preprints,
+    fetch_osf_providers,
+    fetch_single_arxiv_paper_metadata,
+    fetch_single_osf_preprint_metadata,
+    get_all_providers,
+)
 
 mcp = FastMCP(
     name="Paperclip MCP Server",
@@ -67,12 +77,13 @@ async def search_preprints(
 )
 async def get_paper_content(preprint_id: str) -> dict:
     # Check if it's an arXiv paper ID (contains 'v' followed by version number or matches arXiv format)
-    if '.' in preprint_id and ('v' in preprint_id or len(preprint_id.split('.')[0]) == 4):
+    if "." in preprint_id and ("v" in preprint_id or len(preprint_id.split(".")[0]) == 4):
         # arXiv paper ID format (e.g., "2407.06405v1" or "cs.AI/0001001")
         return await download_arxiv_paper_and_parse_to_markdown(preprint_id)
     else:
         # OSF paper ID format
         return await download_osf_preprint_and_parse_to_markdown(preprint_id)
+
 
 @mcp.tool(
     name="get_paper_metadata",
@@ -80,12 +91,13 @@ async def get_paper_content(preprint_id: str) -> dict:
 )
 async def get_paper_metadata(preprint_id: str) -> dict:
     # Check if it's an arXiv paper ID (contains 'v' followed by version number or matches arXiv format)
-    if '.' in preprint_id and ('v' in preprint_id or len(preprint_id.split('.')[0]) == 4):
+    if "." in preprint_id and ("v" in preprint_id or len(preprint_id.split(".")[0]) == 4):
         # arXiv paper ID format (e.g., "2407.06405v1" or "cs.AI/0001001")
         return fetch_single_arxiv_paper_metadata(preprint_id)
     else:
         # OSF paper ID format
         return fetch_single_osf_preprint_metadata(preprint_id)
+
 
 if __name__ == "__main__":
     mcp.run(transport="http", host="0.0.0.0", port=8000)

@@ -29,24 +29,24 @@ def get_external_providers() -> List[Dict[str, Any]]:
     """Get list of external (non-OSF) preprint providers"""
     return [
         {
-            "id": "arxiv", 
-            "type": "standalone", 
-            "description": "arXiv is a free distribution service and an open-access archive for scholarly articles in physics, mathematics, computer science, quantitative biology, quantitative finance, statistics, electrical engineering and systems science, and economics."
+            "id": "arxiv",
+            "type": "standalone",
+            "description": "arXiv is a free distribution service and an open-access archive for scholarly articles in physics, mathematics, computer science, quantitative biology, quantitative finance, statistics, electrical engineering and systems science, and economics.",
         },
         {
-            "id": "biorxiv", 
-            "type": "standalone", 
-            "description": "bioRxiv is a free online archive and distribution service for unpublished preprints in the life sciences. It is operated by Cold Spring Harbor Laboratory."
+            "id": "biorxiv",
+            "type": "standalone",
+            "description": "bioRxiv is a free online archive and distribution service for unpublished preprints in the life sciences. It is operated by Cold Spring Harbor Laboratory.",
         },
         {
-            "id": "medrxiv", 
-            "type": "standalone", 
-            "description": "medRxiv is a free online archive and distribution server for complete but unpublished manuscripts (preprints) in the medical, clinical, and related health sciences."
+            "id": "medrxiv",
+            "type": "standalone",
+            "description": "medRxiv is a free online archive and distribution server for complete but unpublished manuscripts (preprints) in the medical, clinical, and related health sciences.",
         },
         {
-            "id": "chemrxiv", 
-            "type": "standalone", 
-            "description": "ChemRxiv is a free submission, distribution, and archive service for unpublished preprints in chemistry and related areas."
+            "id": "chemrxiv",
+            "type": "standalone",
+            "description": "ChemRxiv is a free submission, distribution, and archive service for unpublished preprints in chemistry and related areas.",
         },
     ]
 
