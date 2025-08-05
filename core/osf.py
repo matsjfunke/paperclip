@@ -30,7 +30,7 @@ def fetch_osf_preprints(
     """
     # If query is provided, use trove search endpoint
     if query:
-        return _fetch_osf_preprints_via_trove(query, provider_id)
+        return fetch_osf_preprints_via_trove(query, provider_id)
     
     # Validate provider if specified
     if provider_id:
@@ -91,7 +91,7 @@ def fetch_osf_preprints(
         raise ValueError(f"Request failed: {str(e)}")
 
 
-def _fetch_osf_preprints_via_trove(query: str, provider_id: Optional[str] = None) -> Dict[str, Any]:
+def fetch_osf_preprints_via_trove(query: str, provider_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Fetch preprints using the trove search endpoint and transform to standard format.
     """
@@ -151,12 +151,12 @@ def _fetch_osf_preprints_via_trove(query: str, provider_id: Optional[str] = None
                 "id": osf_id,
                 "type": "preprints",
                 "attributes": {
-                    "title": _extract_first_value(item.get("title", [])),
-                    "description": _extract_first_value(item.get("description", [])),
-                    "date_created": _extract_first_value(item.get("dateCreated", [])),
-                    "date_published": _extract_first_value(item.get("dateAccepted", [])),
-                    "date_modified": _extract_first_value(item.get("dateModified", [])),
-                    "doi": _extract_doi_from_identifiers(item.get("identifier", [])),
+                    "title": extract_first_value(item.get("title", [])),
+                    "description": extract_first_value(item.get("description", [])),
+                    "date_created": extract_first_value(item.get("dateCreated", [])),
+                    "date_published": extract_first_value(item.get("dateAccepted", [])),
+                    "date_modified": extract_first_value(item.get("dateModified", [])),
+                    "doi": extract_doi_from_identifiers(item.get("identifier", [])),
                     "tags": [kw.get("@value", "") for kw in item.get("keyword", [])],
                     "subjects": [subj.get("prefLabel", [{}])[0].get("@value", "") for subj in item.get("subject", [])]
                 },
@@ -188,7 +188,7 @@ def _fetch_osf_preprints_via_trove(query: str, provider_id: Optional[str] = None
         raise ValueError(f"Trove search failed: {str(e)}")
 
 
-def _extract_first_value(field_list):
+def extract_first_value(field_list):
     """Extract the first @value from a field list."""
     if isinstance(field_list, list) and len(field_list) > 0:
         if isinstance(field_list[0], dict) and "@value" in field_list[0]:
@@ -198,7 +198,7 @@ def _extract_first_value(field_list):
     return ""
 
 
-def _extract_doi_from_identifiers(identifiers):
+def extract_doi_from_identifiers(identifiers):
     """Extract DOI from identifier list."""
     for identifier in identifiers:
         if isinstance(identifier, dict) and "@value" in identifier:
