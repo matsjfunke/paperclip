@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastmcp import FastMCP
 
-from core import fetch_osf_preprints, get_all_providers, fetch_single_osf_preprint_metadata, download_osf_preprint_and_parse_to_markdown
+from core import fetch_osf_preprints, get_all_providers, fetch_single_osf_preprint_metadata, download_osf_preprint_and_parse_to_markdown, fetch_osf_providers, fetch_arxiv_papers
 
 mcp = FastMCP(
     name="Paperclip MCP Server",
@@ -35,17 +35,31 @@ async def list_preprint_providers() -> dict:
     description="Search for preprints using supported filters. And get its metadata.",
 )
 async def search_preprints(
-    provider: Annotated[str | None, "Provider ID to filter preprints (e.g., psyarxiv, socarxiv, biohackrxiv)"] = None,
+    query: Annotated[str | None, "Text search query for title, author, content"] = None,
+    provider: Annotated[str | None, "Provider ID to filter preprints (e.g., psyarxiv, socarxiv, arxiv)"] = None,
     subjects: Annotated[str | None, "Subject categories to filter by (e.g., psychology, neuroscience)"] = None,
     date_published_gte: Annotated[str | None, "Filter preprints published on or after this date (e.g., 2024-01-01)"] = None,
-    query: Annotated[str | None, "Text search query for title, author, content"] = None,
 ) -> dict:
-    return fetch_osf_preprints(
-        provider_id=provider,
-        subjects=subjects,
-        date_published_gte=date_published_gte,
-        query=query,
-    )
+    osf_providers = fetch_osf_providers()
+    osf_provider_ids = [p["id"] for p in osf_providers]
+    if provider in osf_provider_ids:
+        return fetch_osf_preprints(
+            provider_id=provider,
+            subjects=subjects,
+            date_published_gte=date_published_gte,
+            query=query,
+        )
+    elif provider == "arxiv":
+        return fetch_arxiv_papers(
+            query=query,
+            category=subjects,
+        )
+    else:
+        # TODO: add a search across all providers
+        return {
+            "error": "Provider not found",
+        }
+
 
 @mcp.tool(
     name="get_paper_content",
