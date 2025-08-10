@@ -4,8 +4,6 @@ An Model Context Protocol (MCP) Server for searching & retrieving research paper
 
 ## Architecture
 
-A python based mcp server build with FastAPI and FastMCP find docs via [fast-mcp.txt](fast-mcp.txt) framework.
-
 Deployed to a VPS using Docker Swarm run locally with Docker Compose.
 
 Traefik as reverse proxy.
@@ -54,3 +52,19 @@ Use the [MCP Inspector](https://inspector.modelcontextprotocol.io/) to interact 
 ```bash
 pnpx @modelcontextprotocol/inspector
 ```
+
+## Preprint Providers to be added
+
+[List of preprint repositorys](https://en.wikipedia.org/wiki/List_of_preprint_repositories)
+
+- medRxiv
+- bioRxiv
+- ChemRxiv
+- 
+- [hal open science](https://hal.science/?lang=en)
+- [research square](https://www.researchsquare.com/)
+- [osf preprints](https://osf.io/preprints)
+- [preprints.org](https://preprints.org)
+- [science open](https://www.scienceopen.com/)
+- [SSRN](https://www.ssrn.com/index.cfm/en/the-lancet/)
+- [synthical](https://synthical.com/feed/new)

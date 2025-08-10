@@ -53,8 +53,7 @@ async def search_preprints(
     osf_providers = fetch_osf_providers()
     osf_provider_ids = [p["id"] for p in osf_providers]
     if provider in osf_provider_ids:
-        return fetch_osf_preprints(
-            provider_id=provider,
+        return fetch_osf_preprints( provider_id=provider,
             subjects=subjects,
             date_published_gte=date_published_gte,
             query=query,
