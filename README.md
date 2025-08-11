@@ -41,6 +41,8 @@ Traefik as reverse proxy.
 ```bash
 # Run with hot reload
 watchmedo auto-restart --patterns="*.py" --recursive -- python main.py
+# Run Server using fastmcp
+fastmcp run main.py --transport http --host 0.0.0.0 --port 8000      
 ```
 
 The server will automatically restart when you make changes to any `.py` files.
@@ -57,10 +59,9 @@ pnpx @modelcontextprotocol/inspector
 
 [List of preprint repositorys](https://en.wikipedia.org/wiki/List_of_preprint_repositories)
 
-- medRxiv
-- bioRxiv
+- [Open Alex](https://docs.openalex.org/)
+- bioRxiv & medRxiv both share the underlying api structure (https://api.biorxiv.org/pubs/[server]/[interval]/[cursor] where [server] can be "biorxiv" or "medrxiv")
 - ChemRxiv
-- 
 - [hal open science](https://hal.science/?lang=en)
 - [research square](https://www.researchsquare.com/)
 - [osf preprints](https://osf.io/preprints)
