@@ -87,8 +87,12 @@ async def search_preprints(
 async def get_paper_content(preprint_id: str) -> dict:
     # TODO: allow for pdfurl input
 
+    # Check if it's an OpenAlex paper ID (starts with 'W' followed by numbers)
+    if preprint_id.startswith("W") and preprint_id[1:].isdigit():
+        # OpenAlex paper ID format (e.g., "W4385245566")
+        return await download_openalex_paper_and_parse_to_markdown(preprint_id)
     # Check if it's an arXiv paper ID (contains 'v' followed by version number or matches arXiv format)
-    if "." in preprint_id and ("v" in preprint_id or len(preprint_id.split(".")[0]) == 4):
+    elif "." in preprint_id and ("v" in preprint_id or len(preprint_id.split(".")[0]) == 4):
         # arXiv paper ID format (e.g., "2407.06405v1" or "cs.AI/0001001")
         return await download_arxiv_paper_and_parse_to_markdown(preprint_id)
     else:
