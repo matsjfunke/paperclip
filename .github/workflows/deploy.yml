@@ -21,7 +21,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_KEY_PASSPHRASE }}
           script: |
-            cd /opt/paperclip-mcp
+            cd /opt/paperclip
             git fetch origin main
             git reset --hard origin/main
 
@@ -55,9 +55,9 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_KEY_PASSPHRASE }}
           script: |
-            cd /opt/paperclip-mcp
+            cd /opt/paperclip
             echo "🔍 Filtered logs for debugging:"
             echo "--- Traefik status ---"
             docker-compose logs --tail=50 traefik | grep -E "(ERROR|WARN|Ready|Starting|tls|certificate)" | head -30
-            echo "--- Paperclip MCP status ---"
-            docker-compose logs --tail=50 paperclip-mcp | grep -E "(ERROR|WARN|Ready|Starting|Listening|Build)" | head -30
+            echo "--- Paperclip MCP Server status ---"
+            docker-compose logs --tail=50 paperclip | grep -E "(ERROR|WARN|Ready|Starting|Listening|Build)" | head -30
