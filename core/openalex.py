@@ -113,8 +113,17 @@ def _parse_openalex_work(work_data: Dict[str, Any]) -> Dict[str, Any]:
         if concept.get("display_name"):
             concepts.append(concept["display_name"])
 
-    # Use DOI as PDF link
-    pdf_url = work_data.get("doi", "")
+    # Extract PDF URL from primary location or alternative locations
+    pdf_url = ""
+    primary_location = work_data.get("primary_location", {})
+    if primary_location and primary_location.get("pdf_url"):
+        pdf_url = primary_location["pdf_url"]
+    else:
+        # Check all locations for a PDF URL if primary doesn't have one
+        for location in work_data.get("locations", []):
+            if location.get("pdf_url"):
+                pdf_url = location["pdf_url"]
+                break
 
     # Extract abstract from inverted index
     abstract = ""
