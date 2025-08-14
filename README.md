@@ -40,7 +40,7 @@ Traefik as reverse proxy.
 
 ```bash
 # Run with hot reload
-watchmedo auto-restart --patterns="*.py" --recursive -- python server.py
+watchmedo auto-restart --patterns="*.py" --recursive -- python src/server.py
 # Run Server using fastmcp
 fastmcp run server.py --transport http --host 0.0.0.0 --port 8000      
 ```
