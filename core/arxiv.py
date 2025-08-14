@@ -4,7 +4,7 @@ from urllib.parse import quote, urlencode
 
 import requests
 
-from utils import extract_pdf_to_markdown, sanitize_api_queries
+from utils import sanitize_api_queries
 
 
 def fetch_arxiv_papers(
@@ -171,42 +171,3 @@ def fetch_single_arxiv_paper_metadata(paper_id: str) -> Dict[str, Any]:
         raise ValueError(f"Failed to fetch paper metadata: {str(e)}")
     except ET.ParseError as e:
         raise ValueError(f"Failed to parse arXiv response: {str(e)}")
-
-
-async def download_arxiv_paper_and_parse_to_markdown(paper_id: str):
-    """
-    Download a specific arXiv paper PDF by ID and parse it to markdown.
-    Returns paper metadata along with markdown content.
-    """
-    metadata = {}
-    try:
-        # Get paper metadata
-        metadata = fetch_single_arxiv_paper_metadata(paper_id)
-
-        # Download the PDF
-        pdf_response = requests.get(metadata["download_url"], timeout=60)
-        pdf_response.raise_for_status()
-
-        # Parse PDF to markdown
-        try:
-            markdown_content = await extract_pdf_to_markdown(pdf_response.content, filename=f"{paper_id}.pdf", write_images=False)
-
-        except Exception as pdf_error:
-            return {"status": "error", "message": f"Error parsing PDF: {str(pdf_error)}", "metadata": metadata}
-
-        file_size = len(pdf_response.content)
-
-        return {
-            "status": "success",
-            "metadata": metadata,
-            "content": markdown_content,
-            "file_size": file_size,
-            "message": f"Successfully parsed PDF content ({file_size} bytes)",
-        }
-
-    except ValueError as e:
-        return {"status": "error", "message": str(e), "metadata": metadata if metadata else {}}
-    except requests.exceptions.RequestException as e:
-        return {"status": "error", "message": f"Network error: {str(e)}", "metadata": metadata if metadata else {}}
-    except Exception as e:
-        return {"status": "error", "message": f"Error processing paper: {str(e)}", "metadata": metadata if metadata else {}}

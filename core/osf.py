@@ -3,7 +3,7 @@ from urllib.parse import quote, urlencode
 
 import requests
 
-from utils import extract_pdf_to_markdown, sanitize_api_queries
+from utils import sanitize_api_queries
 
 from .providers import fetch_osf_providers, validate_provider
 
@@ -32,13 +32,6 @@ def fetch_osf_preprints(
     # If query is provided, use trove search endpoint
     if query:
         return fetch_osf_preprints_via_trove(query, provider_id)
-
-    # Validate provider if specified
-    if provider_id:
-        osf_providers = fetch_osf_providers()
-        if not validate_provider(provider_id, osf_providers):
-            valid_ids = [p["id"] for p in osf_providers]
-            raise ValueError(f"Invalid OSF provider: {provider_id}. Valid OSF providers: {valid_ids}")
 
     # Build query parameters (only using OSF API supported filters)
     filters = {}
@@ -248,53 +241,3 @@ def fetch_single_osf_preprint_metadata(preprint_id: str) -> Dict[str, Any]:
         return metadata
     except requests.exceptions.RequestException as e:
         raise ValueError(f"Failed to fetch preprint metadata: {str(e)}")
-
-
-async def download_osf_preprint_and_parse_to_markdown(preprint_id):
-    """
-    Download a specific preprint PDF by ID and parse it to markdown.
-    Returns paper metadata along with markdown content.
-    """
-    temp_file = None
-    metadata = {}  # Initialize metadata to avoid undefined variable errors
-    try:
-        # Get preprint metadata using helper function
-        preprint_data = fetch_single_osf_preprint_metadata(preprint_id)
-
-        # If fetch_single_osf_preprint_metadata returns an error dict, handle it
-        if isinstance(preprint_data, dict) and preprint_data.get("status") == "error":
-            return preprint_data
-
-        # Extract metadata for error handling
-        metadata = preprint_data
-
-        # Download the PDF and parse to markdown
-        pdf_response = requests.get(preprint_data["download_url"], timeout=60)
-        pdf_response.raise_for_status()
-
-        # Parse PDF to markdown using pymupdf4llm
-        try:
-            markdown_content = await extract_pdf_to_markdown(pdf_response.content, filename=f"{preprint_id}.pdf", write_images=False)
-
-        except Exception as pdf_error:
-            return {"status": "error", "message": f"Error parsing PDF: {str(pdf_error)}", "metadata": metadata}
-
-        file_size = len(pdf_response.content)
-
-        return {
-            "status": "success",
-            "metadata": metadata,
-            "content": markdown_content,
-            "file_size": file_size,
-            "message": f"Successfully parsed PDF content ({file_size} bytes)",
-        }
-
-    except ValueError as e:
-        # Error from fetch_single_osf_preprint helper function
-        return {"status": "error", "message": str(e), "metadata": {}}
-    except requests.exceptions.RequestException as e:
-        return {"status": "error", "message": f"Network error: {str(e)}", "metadata": metadata if "metadata" in locals() else {}}
-    except KeyError as e:
-        return {"status": "error", "message": f"Unexpected API response structure: {str(e)}", "metadata": metadata if "metadata" in locals() else {}}
-    except Exception as e:
-        return {"status": "error", "message": f"Error processing preprint: {str(e)}", "metadata": metadata if "metadata" in locals() else {}}
