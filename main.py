@@ -4,11 +4,13 @@ from fastmcp import FastMCP
 
 from core import (
     download_arxiv_paper_and_parse_to_markdown,
+    download_openalex_paper_and_parse_to_markdown,
     download_osf_preprint_and_parse_to_markdown,
     fetch_arxiv_papers,
+    fetch_openalex_papers,
     fetch_osf_preprints,
-    fetch_osf_providers,
     fetch_single_arxiv_paper_metadata,
+    fetch_single_openalex_paper_metadata,
     fetch_single_osf_preprint_metadata,
     fetch_osf_providers,
     get_all_providers,
@@ -70,6 +72,12 @@ async def search_preprints(
             query=query,
             category=subjects,
         )
+    elif provider == "openalex":
+        return fetch_openalex_papers(
+            query=query,
+            concepts=subjects,
+            date_published_gte=date_published_gte,
+        )
 
 
 @mcp.tool(
@@ -93,8 +101,12 @@ async def get_paper_content(preprint_id: str) -> dict:
     description="Retrieve the metadata of a preprint paper by its ID (which can be found by the search_preprints tool).",
 )
 async def get_paper_metadata(preprint_id: str) -> dict:
+    # Check if it's an OpenAlex paper ID (starts with 'W' followed by numbers)
+    if preprint_id.startswith("W") and preprint_id[1:].isdigit():
+        # OpenAlex paper ID format (e.g., "W4385245566")
+        return fetch_single_openalex_paper_metadata(preprint_id)
     # Check if it's an arXiv paper ID (contains 'v' followed by version number or matches arXiv format)
-    if "." in preprint_id and ("v" in preprint_id or len(preprint_id.split(".")[0]) == 4):
+    elif "." in preprint_id and ("v" in preprint_id or len(preprint_id.split(".")[0]) == 4):
         # arXiv paper ID format (e.g., "2407.06405v1" or "cs.AI/0001001")
         return fetch_single_arxiv_paper_metadata(preprint_id)
     else:

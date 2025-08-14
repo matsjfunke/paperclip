@@ -33,6 +33,11 @@ def get_external_providers() -> List[Dict[str, Any]]:
             "type": "standalone",
             "description": "arXiv is a free distribution service and an open-access archive for scholarly articles in physics, mathematics, computer science, quantitative biology, quantitative finance, statistics, electrical engineering and systems science, and economics.",
         },
+        {
+            "id": "openalex",
+            "type": "standalone",
+            "description": "OpenAlex is a comprehensive index of scholarly works across all disciplines.",
+        },
     ]
 
 

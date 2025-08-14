@@ -13,6 +13,11 @@ from .osf import (
     fetch_osf_providers,
     fetch_single_osf_preprint_metadata,
 )
+from .openalex import (
+    download_openalex_paper_and_parse_to_markdown,
+    fetch_openalex_papers,
+    fetch_single_openalex_paper_metadata,
+)
 
 
 from .providers import get_all_providers, validate_provider, fetch_osf_providers
@@ -25,6 +30,9 @@ __all__ = [
     "fetch_single_osf_preprint_metadata",
     "download_arxiv_paper_and_parse_to_markdown",
     "download_osf_preprint_and_parse_to_markdown",
+    "fetch_openalex_papers",
+    "fetch_single_openalex_paper_metadata",
+    "download_openalex_paper_and_parse_to_markdown",
     "get_all_providers",
     "validate_provider",
     "fetch_osf_providers",
