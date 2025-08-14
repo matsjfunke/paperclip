@@ -40,9 +40,9 @@ Traefik as reverse proxy.
 
 ```bash
 # Run with hot reload
-watchmedo auto-restart --patterns="*.py" --recursive -- python server.py
+watchmedo auto-restart --patterns="*.py" --recursive -- python src/server.py
 # Run Server using fastmcp
-fastmcp run server.py --transport http --host 0.0.0.0 --port 8000      
+fastmcp run server.py --transport http --host 0.0.0.0 --port 8000
 ```
 
 The server will automatically restart when you make changes to any `.py` files.
@@ -53,6 +53,15 @@ Use the [MCP Inspector](https://inspector.modelcontextprotocol.io/) to interact 
 
 ```bash
 pnpx @modelcontextprotocol/inspector
+```
+
+### Unit Tests
+
+Run the unit tests to verify the functionality of individual components:
+
+```bash
+# Run all tests
+python -m unittest discover tests
 ```
 
 ## Preprint Providers to be added
