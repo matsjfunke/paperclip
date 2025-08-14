@@ -33,33 +33,18 @@ def get_external_providers() -> List[Dict[str, Any]]:
             "type": "standalone",
             "description": "arXiv is a free distribution service and an open-access archive for scholarly articles in physics, mathematics, computer science, quantitative biology, quantitative finance, statistics, electrical engineering and systems science, and economics.",
         },
-        {
-            "id": "biorxiv",
-            "type": "standalone",
-            "description": "bioRxiv is a free online archive and distribution service for unpublished preprints in the life sciences. It is operated by Cold Spring Harbor Laboratory.",
-        },
-        {
-            "id": "medrxiv",
-            "type": "standalone",
-            "description": "medRxiv is a free online archive and distribution server for complete but unpublished manuscripts (preprints) in the medical, clinical, and related health sciences.",
-        },
-        {
-            "id": "chemrxiv",
-            "type": "standalone",
-            "description": "ChemRxiv is a free submission, distribution, and archive service for unpublished preprints in chemistry and related areas.",
-        },
     ]
 
 
 def get_all_providers() -> List[Dict[str, Any]]:
-    """Get combined list of all available providers (OSF + external)"""
+    """Get combined list of all available providers"""
     osf_providers = fetch_osf_providers()
     external_providers = get_external_providers()
     all_providers = osf_providers + external_providers
     return sorted(all_providers, key=lambda p: p["id"].lower())
 
 
-def validate_provider(provider_id: str, providers: List[Dict[str, Any]]) -> bool:
+def validate_provider(provider_id: str) -> bool:
     """Validate if a provider ID exists in the given providers list"""
-    valid_ids = [p["id"] for p in providers]
+    valid_ids = [p["id"] for p in get_all_providers()]
     return provider_id in valid_ids

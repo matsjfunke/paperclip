@@ -10,6 +10,7 @@ from core import (
     fetch_osf_providers,
     fetch_single_arxiv_paper_metadata,
     fetch_single_osf_preprint_metadata,
+    fetch_osf_providers,
     get_all_providers,
 )
 
@@ -50,9 +51,15 @@ async def search_preprints(
     subjects: Annotated[str | None, "Subject categories to filter by (e.g., psychology, neuroscience)"] = None,
     date_published_gte: Annotated[str | None, "Filter preprints published on or after this date (e.g., 2024-01-01)"] = None,
 ) -> dict:
-    osf_providers = fetch_osf_providers()
-    osf_provider_ids = [p["id"] for p in osf_providers]
-    if provider in osf_provider_ids:
+    if provider and provider not in [p["id"] for p in get_all_providers()]:
+        return {
+            "error": f"Provider: {provider} not found. Please use list_preprint_providers to get the complete list of all available providers.",
+        }
+    if not provider:
+        return {
+            "error": "TODO implement search across all providers",
+        }
+    if provider == "osf" or provider in [p["id"] for p in fetch_osf_providers()]:
         return fetch_osf_preprints( provider_id=provider,
             subjects=subjects,
             date_published_gte=date_published_gte,
@@ -63,11 +70,6 @@ async def search_preprints(
             query=query,
             category=subjects,
         )
-    else:
-        # TODO: add a search across all providers
-        return {
-            "error": "Provider not found",
-        }
 
 
 @mcp.tool(
@@ -75,6 +77,8 @@ async def search_preprints(
     description="Retrieve the content of a preprint paper by its ID (which can be found by the search_preprints tool).",
 )
 async def get_paper_content(preprint_id: str) -> dict:
+    # TODO: allow for pdfurl input
+
     # Check if it's an arXiv paper ID (contains 'v' followed by version number or matches arXiv format)
     if "." in preprint_id and ("v" in preprint_id or len(preprint_id.split(".")[0]) == 4):
         # arXiv paper ID format (e.g., "2407.06405v1" or "cs.AI/0001001")

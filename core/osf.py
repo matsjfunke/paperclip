@@ -33,13 +33,6 @@ def fetch_osf_preprints(
     if query:
         return fetch_osf_preprints_via_trove(query, provider_id)
 
-    # Validate provider if specified
-    if provider_id:
-        osf_providers = fetch_osf_providers()
-        if not validate_provider(provider_id, osf_providers):
-            valid_ids = [p["id"] for p in osf_providers]
-            raise ValueError(f"Invalid OSF provider: {provider_id}. Valid OSF providers: {valid_ids}")
-
     # Build query parameters (only using OSF API supported filters)
     filters = {}
 
