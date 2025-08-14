@@ -48,7 +48,7 @@ async def list_providers() -> dict:
 )
 async def search_papers(
     query: Annotated[str | None, "Text search query for title, author, content"] = None,
-    provider: Annotated[str | None, "Provider ID to filter preprints (e.g., psyarxiv, socarxiv, arxiv)"] = None,
+    provider: Annotated[str | None, "Provider ID to filter preprints (e.g., psyarxiv, socarxiv, arxiv, openalex, osf)"] = None,
     subjects: Annotated[str | None, "Subject categories to filter by (e.g., psychology, neuroscience)"] = None,
     date_published_gte: Annotated[str | None, "Filter preprints published on or after this date (e.g., 2024-01-01)"] = None,
 ) -> dict:

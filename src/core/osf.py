@@ -104,8 +104,8 @@ def fetch_osf_preprints_via_trove(query: str, provider_id: Optional[str] = None)
 
     # Validate provider if specified (we'll filter results later)
     if provider_id:
-        osf_providers = fetch_osf_providers()
-        if not validate_provider(provider_id, osf_providers):
+        if not validate_provider(provider_id):
+            osf_providers = fetch_osf_providers()
             valid_ids = [p["id"] for p in osf_providers]
             raise ValueError(f"Invalid OSF provider: {provider_id}. Valid OSF providers: {valid_ids}")
 
