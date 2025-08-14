@@ -17,18 +17,19 @@ from utils.pdf2md import download_pdf_and_parse_to_markdown, download_paper_and_
 mcp = FastMCP(
     name="Paperclip MCP Server",
     instructions="""
-        This server provides tools to interact with academic preprint papers.
-        Call list_preprint_providers() to get the complete list of all available preprint providers via the paperclip MCP server.
-        Call search_preprints() to search for preprints using OSF API supported filters.
+        This server provides tools to search, retrieve, and read academic papers from multiple sources.
+        - Search papers across providers with filters for query text, subjects, and publication date
+        - Read full paper content in markdown format
+        - Retrieve paper metadata without downloading content (e.g. title, authors, abstract, publication date, journal info, and download URLs)
     """,
 )
 
 
 @mcp.tool(
-    name="list_preprint_providers",
-    description="Get the complete list of all available preprint providers via the paperclip MCP server.",
+    name="list_providers",
+    description="Get the complete list of all available academic paper providers. Includes preprint servers (ArXiv, Open Science Framework (OSF) discipline-specific servers). Returns provider IDs for use with search_papers.",
 )
-async def list_preprint_providers() -> dict:
+async def list_providers() -> dict:
     """
     Call the osf api and hardcode other supported providers.
 
@@ -42,10 +43,10 @@ async def list_preprint_providers() -> dict:
 
 
 @mcp.tool(
-    name="search_preprints",
-    description="Search for preprints using supported filters. And get its metadata.",
+    name="search_papers",
+    description="Find papers using supported filters. And retrieve their metadata.",
 )
-async def search_preprints(
+async def search_papers(
     query: Annotated[str | None, "Text search query for title, author, content"] = None,
     provider: Annotated[str | None, "Provider ID to filter preprints (e.g., psyarxiv, socarxiv, arxiv)"] = None,
     subjects: Annotated[str | None, "Subject categories to filter by (e.g., psychology, neuroscience)"] = None,
@@ -80,7 +81,7 @@ async def search_preprints(
 
 @mcp.tool(
     name="get_paper_by_id",
-    description="Retrieve the content of a preprint paper by its ID (which can be found by the search_preprints tool).",
+    description="Download and convert an academic paper to markdown format by its ID. Returns full paper content including title, abstract, sections, and references. Supports ArXiv (e.g., '2407.06405v1'), OpenAlex (e.g., 'W4385245566'), and OSF IDs.",
 )
 async def get_paper_by_id(paper_id: str) -> dict:
     try:
@@ -120,18 +121,18 @@ async def get_paper_by_id(paper_id: str) -> dict:
         return {"status": "error", "message": str(e), "metadata": {}}
 
 @mcp.tool(
-    name="get_paper_by_url",
-    description="Retrieve the paper content as markdown from a PDF URL. Provide the direct URL (pdf_url, primary_location_url) to a PDF file.",
+    name="get_paper_content_by_url",
+    description="Download and convert a PDF paper to markdown format from a direct PDF URL. Returns full paper content parsed from the PDF including title, abstract, sections, and references.",
 )
-async def get_paper_by_url(pdf_url: str) -> dict:
+async def get_paper_content_by_url(pdf_url: str) -> dict:
     return await download_pdf_and_parse_to_markdown(pdf_url)
 
 
 @mcp.tool(
-    name="get_paper_metadata",
-    description="Retrieve the metadata of a preprint paper by its ID (which can be found by the search_preprints tool).",
+    name="get_paper_metadata_by_id",
+    description="Get metadata for an academic paper by its ID without downloading full content. Returns title, authors, abstract, publication date, journal info, and download URLs. Supports ArXiv, OpenAlex, and OSF IDs.",
 )
-async def get_paper_metadata(preprint_id: str) -> dict:
+async def get_paper_metadata_by_id(preprint_id: str) -> dict:
     # Check if it's an OpenAlex paper ID (starts with 'W' followed by numbers)
     if preprint_id.startswith("W") and preprint_id[1:].isdigit():
         # OpenAlex paper ID format (e.g., "W4385245566")
