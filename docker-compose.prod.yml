@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    command:
+      - "--api.insecure=false" # Disable insecure API dashboard for production security
+      - "--providers.docker=true" # Auto-discover services via Docker labels
+      # Only expose services that explicitly set traefik.enable=true (security best practice)
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80" # HTTP entrypoint redirects to HTTPS
+      - "--entrypoints.websecure.address=:443" # HTTPS entrypoint
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true" # Automatic SSL certificate generation via Let's Encrypt TLS challenge
+      - "--certificatesresolvers.myresolver.acme.email=mats.funke@gmail.com" # Email required for Let's Encrypt certificate notifications and recovery
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json" # SSL certificates persist across container restarts
+      # Force HTTP to HTTPS redirect for security (all traffic must be encrypted)
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt # SSL certificates persist across container restarts
+    networks:
+      - web
+    restart: unless-stopped
+
+  paperclip-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: paperclip-mcp
+    command: python server.py
+    labels:
+      - "traefik.enable=true"
+
+      # Define service first to avoid Traefik auto-generating conflicting services
+      - "traefik.http.services.paperclip-mcp.loadbalancer.server.port=8000"
+
+      # MCP server route - accessible via HTTPS
+      - "traefik.http.routers.paperclip-mcp.rule=Host(`paperclip.matsjfunke.com`)"
+      - "traefik.http.routers.paperclip-mcp.entrypoints=websecure"
+      - "traefik.http.routers.paperclip-mcp.tls.certresolver=myresolver"
+      - "traefik.http.routers.paperclip-mcp.service=paperclip-mcp"
+
+      # CORS headers required for MCP protocol compatibility with AI clients
+      - "traefik.http.middlewares.mcp-cors.headers.accesscontrolallowmethods=GET,POST,OPTIONS,PUT,DELETE"
+      - "traefik.http.middlewares.mcp-cors.headers.accesscontrolallowheaders=Content-Type,Authorization,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since,mcp-session-id"
+      - "traefik.http.middlewares.mcp-cors.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.mcp-cors.headers.accesscontrolmaxage=86400"
+
+      # Apply CORS middleware to the router
+      - "traefik.http.routers.paperclip-mcp.middlewares=mcp-cors"
+
+    networks:
+      - web
+    restart: unless-stopped
+    depends_on:
+      - traefik
+    environment:
+      - PYTHONPATH=/app
+
+volumes:
+  # Named volume for Let's Encrypt certificates persistence across container restarts
+  traefik_letsencrypt:
+
+networks:
+  # Internal network for container communication (external=false for security)
+  web:
+    external: false

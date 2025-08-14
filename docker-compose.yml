@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  paperclip:
+    build:
+      context: .
+    image: paperclip-image
+    container_name: paperclip
+    ports:
+      - 8000:8000
+    volumes:
+      - ./:/app # mount local backend dir to /app in container to enable live reloading of code changes
+    command: watchmedo auto-restart --patterns="*.py" --recursive -- python src/server.py --transport http --host 0.0.0.0 --port 8000
