@@ -1,0 +1,90 @@
+name: Ping MCP Server
+
+on:
+  schedule:
+    # Run once per day at 10:00 UTC
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastmcp==2.11.0
+
+      - name: Create ping script
+        run: |
+          cat > ping_server.py << 'EOF'
+          import asyncio
+          import sys
+          import os
+          from datetime import datetime
+          from fastmcp.client.client import Client
+
+          async def ping_server():
+              server_url = 'https://paperclip.matsjfunke.com/mcp'
+              
+              print(f"🏓 Pinging MCP server at: {server_url}")
+              print(f"⏰ Timestamp: {datetime.now().isoformat()}")
+              
+              try:
+                  # Create client instance
+                  client = Client(server_url)
+                  
+                  # Connect and ping
+                  async with client:
+                      print("✅ Successfully connected to server")
+                      
+                      # Send ping
+                      ping_result = await client.ping()
+                      
+                      if ping_result:
+                          print("🎯 Ping successful! Server is responsive")
+                          return True
+                      else:
+                          print("❌ Ping failed! Server did not respond properly")
+                          return False
+                          
+              except Exception as e:
+                  print(f"💥 Error connecting to server: {str(e)}")
+                  print(f"🔧 Error type: {type(e).__name__}")
+                  return False
+
+          if __name__ == "__main__":
+              result = asyncio.run(ping_server())
+              if not result:
+                  sys.exit(1)
+          EOF
+
+      - name: Run ping test
+        run: python ping_server.py
+
+      - name: Report ping failure
+        if: failure()
+        run: |
+          echo "🚨 Server ping failed!"
+          echo "⚠️  This could indicate:"
+          echo "   - Server is down or not responding"
+          echo "   - Network connectivity issues"
+          echo "   - Server is overloaded"
+          echo "   - Configuration problems"
+          echo ""
+          echo "🔍 Check the deploy workflow and server logs for more details"
+
+      - name: Report ping success
+        if: success()
+        run: |
+          echo "✅ Server ping successful!"
+          echo "🟢 MCP server is healthy and responsive"
