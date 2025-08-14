@@ -1,9 +1,41 @@
 """
 PDF processing utilities using pymupdf4llm.
+
+download_paper_and_parse_to_markdown()     download_pdf_and_parse_to_markdown()
+(with metadata)                            (direct URL)
+    |                                         |
+    v                                         v
+Extract PDF URL from metadata          Generate filename from URL
+    |                                         |
+    +-------------------+---------------------+
+                        |
+                        v
+            _download_and_parse_pdf_core()
+                        |
+                        v
+                requests.get(pdf_url)
+                        |
+                        v
+            extract_pdf_to_markdown()
+                        |
+                        v
+        Return (content, size, message)
+                        |
+            +-----------+-----------+
+            |                       |
+            v                       v
+    Format response            Format response
+    with metadata              with pdf_url
+
+The shared core logic eliminates code duplication while maintaining 
+distinct interfaces for metadata-based vs direct URL workflows.
 """
 
 import os
 from typing import Optional
+import tempfile
+import httpx
+import requests
 
 import pymupdf4llm as pdfmd
 
@@ -72,3 +104,100 @@ async def extract_pdf_to_markdown(file_input, filename: Optional[str] = None, wr
                 os.unlink(temp_path)
             except Exception:
                 pass  # Ignore cleanup errors
+
+
+async def _download_and_parse_pdf_core(
+    pdf_url: str, 
+    filename: str = "paper.pdf",
+    write_images: bool = False
+) -> tuple[str, int, str]:
+    # Download PDF
+    pdf_response = requests.get(pdf_url, timeout=60)
+    pdf_response.raise_for_status()
+    
+    # Parse PDF to markdown
+    markdown_content = await extract_pdf_to_markdown(
+        pdf_response.content, 
+        filename=filename, 
+        write_images=write_images
+    )
+    
+    file_size = len(pdf_response.content)
+    message = f"Successfully parsed PDF content ({file_size} bytes)"
+    
+    return markdown_content, file_size, message
+
+
+async def download_paper_and_parse_to_markdown(
+    metadata: dict, 
+    pdf_url_field: str = "download_url",
+    paper_id: str = "",
+    write_images: bool = False
+) -> dict:
+    # Extract PDF URL from metadata
+    pdf_url = metadata.get(pdf_url_field)
+    if not pdf_url:
+        return {
+            "status": "error", 
+            "message": f"No PDF URL found in metadata field '{pdf_url_field}'", 
+            "metadata": metadata
+        }
+
+    try:
+        filename = f"{paper_id}.pdf" if paper_id else "paper.pdf"
+        markdown_content, file_size, message = await _download_and_parse_pdf_core(
+            pdf_url, filename, write_images
+        )
+        
+        return {
+            "status": "success",
+            "metadata": metadata,
+            "content": markdown_content,
+            "file_size": file_size,
+            "message": message,
+        }
+
+    except requests.exceptions.RequestException as e:
+        return {
+            "status": "error", 
+            "message": f"Network error: {str(e)}", 
+            "metadata": metadata
+        }
+    except Exception as e:
+        return {
+            "status": "error", 
+            "message": f"Error parsing PDF: {str(e)}", 
+            "metadata": metadata
+        }
+
+
+async def download_pdf_and_parse_to_markdown(pdf_url: str, write_images: bool = False) -> dict:
+    try:
+        filename = pdf_url.split('/')[-1] if '/' in pdf_url else "paper.pdf"
+        if not filename.endswith('.pdf'):
+            filename = "paper.pdf"
+            
+        markdown_content, file_size, message = await _download_and_parse_pdf_core(
+            pdf_url, filename, write_images
+        )
+        
+        return {
+            "status": "success",
+            "content": markdown_content,
+            "file_size": file_size,
+            "pdf_url": pdf_url,
+            "message": message,
+        }
+
+    except requests.exceptions.RequestException as e:
+        return {
+            "status": "error", 
+            "message": f"Network error downloading PDF: {str(e)}", 
+            "pdf_url": pdf_url
+        }
+    except Exception as e:
+        return {
+            "status": "error", 
+            "message": f"Error parsing PDF: {str(e)}", 
+            "pdf_url": pdf_url
+        }
