@@ -1,0 +1,63 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_KEY_PASSPHRASE }}
+          script: |
+            cd /opt/paperclip-mcp
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "🔄 Stopping containers..."
+            docker-compose down
+
+            echo "🏗️ Building containers..."
+            docker-compose build --no-cache
+
+            echo "🚀 Starting containers..."
+            docker-compose up -d
+
+            echo "⏳ Waiting for containers to start..."
+            sleep 10
+
+            echo "📊 Container status:"
+            docker-compose ps --format "table {{.Service}}\t{{.Status}}\t{{.Ports}}"
+
+            echo "📋 Recent logs from all services (filtered):"
+            docker-compose logs --tail=30 | grep -E "(ERROR|WARN|INFO|Ready|Starting|Listening)" | head -50
+
+            echo "🧹 Cleaning up..."
+            docker system prune -f
+
+      - name: Show specific service logs on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_KEY_PASSPHRASE }}
+          script: |
+            cd /opt/paperclip-mcp
+            echo "🔍 Filtered logs for debugging:"
+            echo "--- Traefik status ---"
+            docker-compose logs --tail=50 traefik | grep -E "(ERROR|WARN|Ready|Starting|tls|certificate)" | head -30
+            echo "--- Paperclip MCP status ---"
+            docker-compose logs --tail=50 paperclip-mcp | grep -E "(ERROR|WARN|Ready|Starting|Listening|Build)" | head -30
