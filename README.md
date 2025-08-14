@@ -40,9 +40,9 @@ Traefik as reverse proxy.
 
 ```bash
 # Run with hot reload
-watchmedo auto-restart --patterns="*.py" --recursive -- python main.py
+watchmedo auto-restart --patterns="*.py" --recursive -- python server.py
 # Run Server using fastmcp
-fastmcp run main.py --transport http --host 0.0.0.0 --port 8000      
+fastmcp run server.py --transport http --host 0.0.0.0 --port 8000      
 ```
 
 The server will automatically restart when you make changes to any `.py` files.
