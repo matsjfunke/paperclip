@@ -219,6 +219,7 @@ async def download_openalex_paper_and_parse_to_markdown(paper_id: str):
     Download a specific OpenAlex paper PDF by ID and parse it to markdown.
     Returns paper metadata along with markdown content.
     """
+    # TODO: make this robust to different pdf urls
     metadata = {}
     try:
         # Get paper metadata

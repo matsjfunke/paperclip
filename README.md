@@ -59,7 +59,6 @@ pnpx @modelcontextprotocol/inspector
 
 [List of preprint repositorys](https://en.wikipedia.org/wiki/List_of_preprint_repositories)
 
-- [Open Alex](https://docs.openalex.org/)
 - bioRxiv & medRxiv both share the underlying api structure (https://api.biorxiv.org/pubs/[server]/[interval]/[cursor] where [server] can be "biorxiv" or "medrxiv")
 - ChemRxiv
 - [hal open science](https://hal.science/?lang=en)
