@@ -1,4 +1,4 @@
-name: Ping MCP Server
+name: Ping / Health Check Paperclip Server
 
 on:
   schedule:
@@ -87,4 +87,4 @@ jobs:
         if: success()
         run: |
           echo "✅ Server ping successful!"
-          echo "🟢 MCP server is healthy and responsive"
+          echo "🟢 Paperclip server is healthy and responsive"
