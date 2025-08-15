@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📖 Documentation
+    url: https://github.com/matsjfunke/paperclip/blob/main/README.md
+    about: Check the README for documentation

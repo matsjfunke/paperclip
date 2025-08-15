@@ -1,0 +1,45 @@
+name: Question
+description: Ask a question about paperclip
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question about paperclip? We're here to help! Please provide as much detail as possible.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know about paperclip?
+      placeholder: Ask your question here...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: |
+        What are you trying to achieve? Providing context helps us give better answers.
+      placeholder: |
+        e.g., "I'm trying to understand how paperclip handles..."
+        or "I want to use paperclip to..."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm you've done the following
+      options:
+        - label: I've checked the README and documentation
+          required: true
+        - label: I've searched existing issues for similar questions
+          required: true
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Information
+      description: Any other details that might be helpful
