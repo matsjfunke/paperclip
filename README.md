@@ -6,7 +6,9 @@
 
 > 📎 Paperclip is a Model Context Protocol (MCP) server that enables searching and retrieving research papers from Arxiv, the Open Science Framework (OSF) API, and OpenAlex.
 
-## Getting Started
+[![Tests](https://github.com/matsjfunke/paperclip/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/matsjfunke/paperclip/actions/workflows/tests.yml)
+
+## Quick Start
 
 Setup the paperclip MCP server in your host via the server url `https://paperclip.matsjfunke.com/mcp` no authentication is needed.
 
@@ -22,15 +24,25 @@ Example JSON for cursor:
 }
 ```
 
-**Paperclip Usage:**
+## Table of Contents
 
-Crusor:
+- [Quick Start](#quick-start)
+- [Usage Examples](#usage-examples)
+- [Supported Paper providers](#supported-paper-providers)
+- [Preprint Providers to be added](#preprint-providers-to-be-added)
+- [Contributing](#contributing)
 
-![Cursor Usage](assets/cursor-usage.png)
+## Usage Examples
 
-Langdock:
+Here are examples of Paperclip integrated with popular MCP clients:
 
-![Paperclip usage in Langdock](assets/langdock-usage.png)
+**Cursor IDE:**
+
+![Paperclip integration with Cursor](assets/cursor-usage.png)
+
+**Langdock:**
+
+![Paperclip integration with Langdock](assets/langdock-usage.png)
 
 ## Supported Paper providers
 
@@ -82,65 +94,6 @@ Langdock:
 - [SSRN](https://www.ssrn.com/index.cfm/en/the-lancet/)
 - [synthical](https://synthical.com/feed/new)
 
-## Development Setup
+## Contributing
 
-### Prerequisites
-
-- Python 3.12+
-- pip
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone <repository-url>
-   cd paperclip
-   ```
-
-2. **Create and activate virtual environment**
-
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Add dependencies**
-   ```bash
-   pip install <new-lib>
-   pip freeze > requirements.txt
-   ```
-
-### Running the Server with Hot Reload
-
-```bash
-# Run with hot reload
-watchmedo auto-restart --patterns="*.py" --recursive -- python src/server.py
-# Run Server using fastmcp
-fastmcp run server.py --transport http --host 0.0.0.0 --port 8000
-```
-
-The server will automatically restart when you make changes to any `.py` files.
-
-### Testing
-
-Use the [MCP Inspector](https://inspector.modelcontextprotocol.io/) to interact with the server.
-
-```bash
-pnpx @modelcontextprotocol/inspector
-```
-
-### Unit Tests
-
-Run the unit tests to verify the functionality of individual components:
-
-```bash
-# Run all tests
-python -m unittest discover tests -v
-```
+Interested in contributing to Paperclip? Check out our [Contributing Guide](CONTRIBUTING.md) for development setup instructions, testing procedures, and more!
