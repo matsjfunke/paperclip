@@ -7,7 +7,7 @@
 > 📎 Paperclip is a Model Context Protocol (MCP) server that enables searching and retrieving research papers from Arxiv, the Open Science Framework (OSF) API, and OpenAlex.
 
 [![Tests](https://github.com/matsjfunke/paperclip/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/matsjfunke/paperclip/actions/workflows/tests.yml)
-[![Server Status](https://github.com/matsjfunke/paperclip/actions/workflows/ping-server.yml/badge.svg)](https://github.com/matsjfunke/paperclip/actions/workflows/ping-server.yml)
+[![Health Check](https://github.com/matsjfunke/paperclip/actions/workflows/ping-server.yml/badge.svg)](https://github.com/matsjfunke/paperclip/actions/workflows/ping-server.yml)
 
 ## Quick Start
 
