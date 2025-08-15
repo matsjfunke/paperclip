@@ -8,6 +8,7 @@
 
 [![Tests](https://github.com/matsjfunke/paperclip/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/matsjfunke/paperclip/actions/workflows/tests.yml)
 [![Health Check](https://github.com/matsjfunke/paperclip/actions/workflows/ping-server.yml/badge.svg)](https://github.com/matsjfunke/paperclip/actions/workflows/ping-server.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 ## Quick Start
 
