@@ -1,4 +1,4 @@
-name: Ping / Health Check Paperclip Server
+name: Health Check
 
 on:
   schedule:

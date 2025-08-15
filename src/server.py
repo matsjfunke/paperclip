@@ -57,8 +57,30 @@ async def search_papers(
             "error": f"Provider: {provider} not found. Please use list_preprint_providers to get the complete list of all available providers.",
         }
     if not provider:
+        all_results = []
+        
+        arxiv_results = fetch_arxiv_papers(query=query, category=subjects)
+        all_results.append(arxiv_results)
+    
+        openalex_results = fetch_openalex_papers(
+            query=query, 
+            concepts=subjects, 
+            date_published_gte=date_published_gte
+        )
+        all_results.append(openalex_results)
+    
+        osf_results = fetch_osf_preprints(
+            provider_id="osf",
+            subjects=subjects,
+            date_published_gte=date_published_gte,
+            query=query,
+        )
+        all_results.append(osf_results)
+        
         return {
-            "error": "TODO implement search across all providers",
+            "papers": all_results,
+            "total_count": len(all_results),
+            "providers_searched": ["arxiv", "openalex", "osf"],
         }
     if provider == "osf" or provider in [p["id"] for p in fetch_osf_providers()]:
         return fetch_osf_preprints( provider_id=provider,
