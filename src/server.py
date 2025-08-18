@@ -1,6 +1,8 @@
 from typing import Annotated
 
 from fastmcp import FastMCP
+from prompts import prompt_mcp
+import asyncio
 
 from core import (
     fetch_arxiv_papers,
@@ -169,4 +171,8 @@ async def get_paper_metadata_by_id(preprint_id: str) -> dict:
 
 
 if __name__ == "__main__":
+    async def setup():
+        await mcp.import_server(prompt_mcp, prefix="prompt")
+
+    asyncio.run(setup())
     mcp.run(transport="http", host="0.0.0.0", port=8000)
