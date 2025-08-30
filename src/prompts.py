@@ -27,3 +27,8 @@ def get_paper_metadata_by_id() -> str:
 def get_paper_by_url() -> str:
     """Prompt to use the get_paper_by_url tool."""
     return "Retrieve the full content (including abstract, sections, and references) of the paper with URL: https://arxiv.org/pdf/1706.03762"
+
+@prompt_mcp.prompt
+def search_across_providers() -> str:
+    """Prompt for searching across all providers (not specifying a provider)."""
+    return "Search for papers across all providers with the query: MCP"
