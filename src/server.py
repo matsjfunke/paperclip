@@ -31,7 +31,7 @@ mcp = FastMCP(
 # Import subservers
 async def setup():
     await mcp.import_server(prompt_mcp, prefix="prompt")
-    await mcp.import_server(tools_mcp, prefix="research")
+    await mcp.import_server(tools_mcp, prefix="tools")
 
 if __name__ == "__main__":
     asyncio.run(setup())

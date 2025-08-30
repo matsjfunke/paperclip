@@ -134,13 +134,6 @@ async def get_paper_by_id(paper_id: str) -> dict:
     except ValueError as e:
         return {"status": "error", "message": str(e), "metadata": {}}
 
-@tools_mcp.tool(
-    name="get_paper_content_by_url",
-    description="Download and convert a PDF paper to markdown format from a direct PDF URL. Returns full paper content parsed from the PDF including title, abstract, sections, and references.",
-)
-async def get_paper_content_by_url(pdf_url: str) -> dict:
-    return await download_pdf_and_parse_to_markdown(pdf_url)
-
 
 @tools_mcp.tool(
     name="get_paper_metadata_by_id",
@@ -158,3 +151,11 @@ async def get_paper_metadata_by_id(preprint_id: str) -> dict:
     else:
         # OSF paper ID format
         return fetch_single_osf_preprint_metadata(preprint_id)
+
+
+@tools_mcp.tool(
+    name="get_paper_content_by_url",
+    description="Download and convert the PDF of a paper to markdown format from a direct PDF URL. Returns full paper content parsed from the PDF including title, abstract, sections, and references.",
+)
+async def get_paper_content_by_url(pdf_url: str) -> dict:
+    return await download_pdf_and_parse_to_markdown(pdf_url)
