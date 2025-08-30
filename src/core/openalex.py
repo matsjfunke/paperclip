@@ -115,11 +115,11 @@ def _parse_openalex_work(work_data: Dict[str, Any]) -> Dict[str, Any]:
 
     # Extract PDF URL from primary location or alternative locations
     pdf_url = ""
-    primary_location = work_data.get("primary_location", {})
+    primary_location = work_data.get("primary_location") or {}
     if primary_location and primary_location.get("pdf_url"):
         pdf_url = primary_location["pdf_url"]
-    elif work_data.get("primary_location", {}).get("landing_page_url"):
-        pdf_url = work_data.get("primary_location", {}).get("landing_page_url", "")
+    elif primary_location and primary_location.get("landing_page_url"):
+        pdf_url = primary_location.get("landing_page_url", "")
     else:
         # Check all locations for a PDF URL if primary doesn't have one
         for location in work_data.get("locations", []):
@@ -139,10 +139,10 @@ def _parse_openalex_work(work_data: Dict[str, Any]) -> Dict[str, Any]:
         openalex_id = openalex_id.replace("https://openalex.org/", "")
 
     # Get primary location source info
-    primary_location = work_data.get("primary_location", {})
     primary_source = ""
     if primary_location and primary_location.get("source"):
-        primary_source = primary_location["source"].get("display_name", "")
+        source = primary_location.get("source") or {}
+        primary_source = source.get("display_name", "")
 
     return {
         "id": openalex_id,
@@ -154,11 +154,11 @@ def _parse_openalex_work(work_data: Dict[str, Any]) -> Dict[str, Any]:
         "publication_year": work_data.get("publication_year"),
         "cited_by_count": work_data.get("cited_by_count", 0),
         "concepts": concepts,
-        "primary_location_url": work_data.get("primary_location", {}).get("landing_page_url", ""),
+        "primary_location_url": (work_data.get("primary_location") or {}).get("landing_page_url", ""),
         "primary_source": primary_source,
         "pdf_url": pdf_url,
-        "open_access_status": work_data.get("open_access", {}).get("oa_status", "closed"),
-        "is_open_access": work_data.get("primary_location", {}).get("is_oa", False),
+        "open_access_status": (work_data.get("open_access") or {}).get("oa_status", "closed"),
+        "is_open_access": (work_data.get("primary_location") or {}).get("is_oa", False),
         "type": work_data.get("type", ""),
         "relevance_score": work_data.get("relevance_score", 0),
     }
