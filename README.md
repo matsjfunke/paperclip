@@ -10,9 +10,11 @@
 [![Health Check](https://github.com/matsjfunke/paperclip/actions/workflows/ping-server.yml/badge.svg)](https://github.com/matsjfunke/paperclip/actions/workflows/ping-server.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
+> Important the server is no longer hosted on `paperclip.matsjfunke.com/mcp` you need to host it yourself! For that you can fork this repo and use the `deploy.yml` Github Action to host on a simple VPS ([my simple VPS setup guide](https://matsjfunke.com/compendiums/hetzner))
+
 ## Quick Start
 
-Setup the paperclip MCP server in your host via the server url `https://paperclip.matsjfunke.com/mcp` no authentication is needed.
+Setup the paperclip MCP server in your host via the server url no authentication is needed.
 
 Example JSON for cursor:
 
@@ -20,7 +22,7 @@ Example JSON for cursor:
 {
   "mcpServers": {
     "paperclip": {
-      "url": "https://paperclip.matsjfunke.com/mcp"
+      "url": "https://<your-server-domain.com>/mcp"
     }
   }
 }
