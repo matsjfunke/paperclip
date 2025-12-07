@@ -1,9 +1,9 @@
 name: Health Check
 
 on:
-  schedule:
-    # Run once per day at 10:00 UTC
-    - cron: "0 10 * * *"
+  # schedule:
+  # Run once per day at 10:00 UTC
+  # - cron: "0 10 * * *"
   workflow_dispatch:
 
 jobs:
